@@ -59,21 +59,7 @@ int next_alnum() {
     do {
         current = getchar();
     } while (!isalnum(current));
-
-    if (isalpha(current)) {
-    }
-
-    char buffer[10];
-    int  num_digits = 0;
-
-    do {
-        buffer[num_digits] = current;
-        num_digits++;
-        current = getchar();
-    } while (isdigit(current));
-    buffer[num_digits] = '\0';
-
-    return atoi(buffer);
+    return current;
 }
 
 Graph input() {
@@ -85,13 +71,13 @@ Graph input() {
     Graph graph = create_graph(num_vertices);
     printf("Enter one edge per line with 2 vertices and the weight.\n");
     for (int i = 0; i < num_edges; i++) {
-        int u = next_number();
-        int v = next_number();
-        int w = next_number();
+        int u = next_alnum();
+        int v = next_alnum();
+        int w = next_alnum();
         add_edge(graph, u, v, w);
     }
     printf("Enter the source node: ");
-    graph.source = next_number();
+    graph.source = next_alnum();
     return graph
 }
 
