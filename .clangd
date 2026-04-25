@@ -1,0 +1,9 @@
+CompileFlags:
+  Add:
+    - --target=x86_64-w64-windows-gnu
+    - -IC:\Program Files\mingw64\x86_64-w64-mingw32\include
+    - -IC:\Program Files\mingw64\include
+    - -xc
+    - -std=c99
+    - -fno-operator-names
+
