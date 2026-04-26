@@ -2,15 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct {
-    int          vertex;
-    struct Node *next;
+typedef struct node {
+    int vertex;
+    int weight;
+
+    struct node *next;
 } Node;
 
 typedef struct {
+    Node **adj_lists;
     int   *visited;
     int    vertices_count;
-    Node **adj_lists;
+    int    source;
 } Graph;
 
 typedef struct {
@@ -24,14 +27,18 @@ void  swap(int *a, int *b);
 void  insert_queue(PriorityQueue *queue, int num);
 void  heapify(PriorityQueue *queue, int i);
 
-Node  *create_node(int v);
-Graph *create_graph(int vertices);
+Node *create_node(int v);
+Graph create_graph();
+void  print_graph(Graph graph);
 
 void add_node(Graph *graph, int s);
-void edge(Graph *graph, int s, int d);
+void add_edge(Graph *graph, int u, int v, int w);
+
+void dijkstra(Graph graph);
 
 int main() {
-    input();
+    Graph graph = input();
+    dijkstra(graph);
     return 0;
 }
 
@@ -62,23 +69,62 @@ int next_alnum() {
     return current;
 }
 
+void print_graph(Graph graph) {
+    for (int v = 0; v < graph.vertices_count; v++) {
+        Node *temp = graph.adj_lists[v];
+        printf("\n Vertex %d:\n ", v);
+        while (temp) {
+            printf("%d -> ", temp->vertex);
+            temp = temp->next;
+        }
+        printf("\n");
+    }
+}
+
 Graph input() {
     printf("Enter the number of vertices (n) and edges (m) there are: ");
 
     int num_vertices = next_number();
     int num_edges = next_number();
 
-    Graph graph = create_graph(num_vertices);
+    Graph graph = create_graph();
     printf("Enter one edge per line with 2 vertices and the weight.\n");
     for (int i = 0; i < num_edges; i++) {
         int u = next_alnum();
         int v = next_alnum();
         int w = next_alnum();
-        add_edge(graph, u, v, w);
+        add_edge(&graph, u, v, w);
     }
     printf("Enter the source node: ");
     graph.source = next_alnum();
-    return graph
+    return graph;
+}
+
+Graph create_graph() {
+    Graph graph;
+    int   vertices = 100;
+    graph.vertices_count = vertices;
+    graph.adj_lists = malloc(vertices * sizeof(Node *));
+    graph.visited = malloc(vertices * sizeof(int));
+
+    for (int i = 0; i < vertices; i++) {
+        graph.adj_lists[i] = NULL;
+        graph.visited[i] = 0;
+    }
+    return graph;
+}
+
+Node *create_node(int v) {
+    Node *new_node = malloc(sizeof(Node));
+    new_node->vertex = v;
+    new_node->next = NULL;
+    return new_node;
+}
+
+void add_edge(Graph *graph, int u, int v, int w) {
+    Node *new_node = create_node(u);
+    new_node->next = graph->adj_lists[v];
+    graph->adj_lists[v] = new_node;
 }
 
 /** Helper functions **/
@@ -122,3 +168,5 @@ void heapify(PriorityQueue *queue, int i) {
         heapify(queue, largest);
     }
 }
+
+void dijkstra(Graph graph) {}
