@@ -8,6 +8,7 @@
 typedef struct node {
     int vertex;
     int weight;
+    int distance;
 
     struct node *next;
 } Node;
@@ -19,32 +20,24 @@ typedef struct {
     int    source;
 } Graph;
 
-typedef struct destination_node {
-    int vertex;
-    int distance;
-
-    struct destination_node *next;
-} DestinationNode;
-
 typedef struct {
     int size;
     int max;
 
-    DestinationNode *min_heap;
+    Node *min_heap;
 } PriorityQueue;
 
 Graph input();
-void  swap_nodes(DestinationNode *a, DestinationNode *b);
-void  insert_queue(PriorityQueue *queue, DestinationNode node);
+void  swap_nodes(Node *a, Node *b);
+void  insert_queue(PriorityQueue *queue, Node node);
 void  heapify(PriorityQueue *queue, int i);
 
-DestinationNode dequeue(PriorityQueue *queue);
+Node dequeue(PriorityQueue *queue);
 
-Node *create_node(int v);
+Node *create_node(int v, int w);
 Graph create_graph();
 void  print_graph(Graph graph);
 
-void add_node(Graph *graph, int s);
 void add_edge(Graph *graph, int u, int v, int w);
 
 void dijkstra(Graph graph);
@@ -129,28 +122,30 @@ Graph create_graph() {
     return graph;
 }
 
-Node *create_node(int v) {
+Node *create_node(int v, int w) {
     Node *new_node = malloc(sizeof(Node));
     new_node->vertex = v;
+    new_node->weight = w;
+    new_node->distance = INF;
     new_node->next = NULL;
     return new_node;
 }
 
 void add_edge(Graph *graph, int u, int v, int w) {
-    Node *new_node = create_node(u);
+    Node *new_node = create_node(u, w);
     new_node->next = graph->adj_lists[v];
     graph->adj_lists[v] = new_node;
 }
 
 /** Helper functions **/
-void swap_nodes(DestinationNode *a, DestinationNode *b) {
-    DestinationNode temp = *a;
+void swap_nodes(Node *a, Node *b) {
+    Node temp = *a;
     *a = *b;
     *b = temp;
 }
 
 /** Queue functions **/
-void insert_queue(PriorityQueue *queue, DestinationNode node) {
+void insert_queue(PriorityQueue *queue, Node node) {
     queue->min_heap[queue->size] = node;
     queue->size += 1;
     int temp;
@@ -187,6 +182,14 @@ void heapify(PriorityQueue *queue, int i) {
     }
 }
 
+void update_queue(PriorityQueue *queue, Node *node) {
+    for (int i = 0; i < queue->size; i++) {
+        if (queue->min_heap[i].vertex == node->vertex) {
+            queue->min_heap[i].distance = node->distance;
+        }
+    }
+}
+
 /** Dijkstra's Algorithm **/
 void dijkstra(Graph graph) {
     PriorityQueue queue;
@@ -194,20 +197,30 @@ void dijkstra(Graph graph) {
         Node *parent = NULL;
         int   path = (i == graph.source) ? 0 : INF;
 
-        DestinationNode dest = {i, path, NULL};
+        Node dest = {i, 0, path, NULL};
         insert_queue(&queue, dest);
     }
 
     // init tree
     for (int i = 0; i < graph.vertices_count; i++) {
-        DestinationNode node = dequeue(&queue);
+        Node node = dequeue(&queue);
         // insert the next node into the tree from its source
         // loop over neighbors of u
+        /*
+         * All neighbors are initialized to have a distance of INF
+         * A node dequeued has no weight
+         * Not all vertices will be initialized with a distance of INF?
+         */
         Node *neighbor = graph.adj_lists[node.vertex];
         while (neighbor) {
             // if current node distance + the edge is better than neighbor dist
-            if (node.distance + neighbor.path < neighbor.distance) {
+            if (node.distance + neighbor->weight < neighbor->distance) {
+                neighbor->distance = node.distance + neighbor->weight;
+                Node *parent = &node;
+                update_queue(&queue, neighbor);
             }
+            neighbor = neighbor->next;
         }
     }
+    // return tree
 }
