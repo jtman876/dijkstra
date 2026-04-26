@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define VERTICES 100
+#define INF 1000
+
 typedef struct node {
     int vertex;
     int weight;
@@ -16,16 +19,26 @@ typedef struct {
     int    source;
 } Graph;
 
+typedef struct destination_node {
+    int vertex;
+    int distance;
+
+    struct destination_node *next;
+} DestinationNode;
+
 typedef struct {
-    int *min_heap;
-    int  size;
-    int  max;
+    int size;
+    int max;
+
+    DestinationNode *min_heap;
 } PriorityQueue;
 
 Graph input();
-void  swap(int *a, int *b);
-void  insert_queue(PriorityQueue *queue, int num);
+void  swap_nodes(DestinationNode *a, DestinationNode *b);
+void  insert_queue(PriorityQueue *queue, DestinationNode node);
 void  heapify(PriorityQueue *queue, int i);
+
+DestinationNode dequeue(PriorityQueue *queue);
 
 Node *create_node(int v);
 Graph create_graph();
@@ -42,6 +55,7 @@ int main() {
     return 0;
 }
 
+/** Input functions **/
 int next_number() {
     char current;
     do {
@@ -69,18 +83,6 @@ int next_alnum() {
     return current;
 }
 
-void print_graph(Graph graph) {
-    for (int v = 0; v < graph.vertices_count; v++) {
-        Node *temp = graph.adj_lists[v];
-        printf("\n Vertex %d:\n ", v);
-        while (temp) {
-            printf("%d -> ", temp->vertex);
-            temp = temp->next;
-        }
-        printf("\n");
-    }
-}
-
 Graph input() {
     printf("Enter the number of vertices (n) and edges (m) there are: ");
 
@@ -100,9 +102,22 @@ Graph input() {
     return graph;
 }
 
+/** Graph functions **/
+void print_graph(Graph graph) {
+    for (int v = 0; v < graph.vertices_count; v++) {
+        Node *temp = graph.adj_lists[v];
+        printf("\n Vertex %d:\n ", v);
+        while (temp) {
+            printf("%d -> ", temp->vertex);
+            temp = temp->next;
+        }
+        printf("\n");
+    }
+}
+
 Graph create_graph() {
     Graph graph;
-    int   vertices = 100;
+    int   vertices = VERTICES;
     graph.vertices_count = vertices;
     graph.adj_lists = malloc(vertices * sizeof(Node *));
     graph.visited = malloc(vertices * sizeof(int));
@@ -128,23 +143,24 @@ void add_edge(Graph *graph, int u, int v, int w) {
 }
 
 /** Helper functions **/
-void swap(int *a, int *b) {
-    int temp = *a;
+void swap_nodes(DestinationNode *a, DestinationNode *b) {
+    DestinationNode temp = *a;
     *a = *b;
     *b = temp;
 }
 
-/** Queue functions */
-void insert_queue(PriorityQueue *queue, int num) {
-    queue->min_heap[queue->size] = num;
+/** Queue functions **/
+void insert_queue(PriorityQueue *queue, DestinationNode node) {
+    queue->min_heap[queue->size] = node;
     queue->size += 1;
     int temp;
 
     int current = queue->size - 1;
     while (current != 0) {
         int parent = (current - 1) / 2;
-        if (queue->min_heap[current] < queue->min_heap[parent]) {
-            swap(&queue->min_heap[current], &queue->min_heap[parent]);
+        if (queue->min_heap[current].distance <
+            queue->min_heap[parent].distance) {
+            swap_nodes(&queue->min_heap[current], &queue->min_heap[parent]);
             current = parent;
         } else {
             break;
@@ -157,16 +173,41 @@ void heapify(PriorityQueue *queue, int i) {
     int l = 2 * i + 1;
     int r = 2 * i + 2;
 
-    if (l < queue->size && queue->min_heap[l] > queue->min_heap[largest]) {
+    if (l < queue->size &&
+        queue->min_heap[l].distance > queue->min_heap[largest].distance) {
         largest = l;
     }
-    if (r < queue->size && queue->min_heap[r] > queue->min_heap[largest]) {
+    if (r < queue->size &&
+        queue->min_heap[r].distance > queue->min_heap[largest].distance) {
         largest = r;
     }
     if (largest != i) {
-        swap(&queue->min_heap[i], &queue->min_heap[largest]);
+        swap_nodes(&queue->min_heap[i], &queue->min_heap[largest]);
         heapify(queue, largest);
     }
 }
 
-void dijkstra(Graph graph) {}
+/** Dijkstra's Algorithm **/
+void dijkstra(Graph graph) {
+    PriorityQueue queue;
+    for (int i = 0; i < graph.vertices_count; i++) {
+        Node *parent = NULL;
+        int   path = (i == graph.source) ? 0 : INF;
+
+        DestinationNode dest = {i, path, NULL};
+        insert_queue(&queue, dest);
+    }
+
+    // init tree
+    for (int i = 0; i < graph.vertices_count; i++) {
+        DestinationNode node = dequeue(&queue);
+        // insert the next node into the tree from its source
+        // loop over neighbors of u
+        Node *neighbor = graph.adj_lists[node.vertex];
+        while (neighbor) {
+            // if current node distance + the edge is better than neighbor dist
+            if (node.distance + neighbor.path < neighbor.distance) {
+            }
+        }
+    }
+}
