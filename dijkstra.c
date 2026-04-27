@@ -13,7 +13,6 @@ typedef struct node {
 
 typedef struct {
     Node **adj_lists;
-    int   *visited;
     int    vertices_count;
     int    source;
 } Graph;
@@ -38,7 +37,7 @@ void  print_graph(Graph graph);
 void add_edge(Graph *graph, int u, int v, int w);
 
 void dijkstra(Graph graph);
-void print_path(int parent[], int v);
+void print_path(int parent[], int v, int arrow);
 
 int main() {
     Graph graph = input();
@@ -76,18 +75,19 @@ int next_alnum() {
 
 Graph input() {
     printf("Enter the number of vertices (n) and edges (m) there are: ");
-
     int num_vertices = next_number();
     int num_edges = next_number();
 
     Graph graph = create_graph();
     printf("Enter one edge per line with 2 vertices and the weight.\n");
+    /* Example input:
+     * a b 5 | a c 2 | b c 1 | b d 4 | b e 2 | c e 7 | d e 6 | d f 3 | e f 1
+     */
     for (int i = 0; i < num_edges; i++) {
         int u = next_alnum();
         int v = next_alnum();
         int w = next_number();
         add_edge(&graph, u, v, w);
-        printf("%c | %d\n", u, u);
     }
     printf("Enter the source node: ");
     graph.source = next_alnum();
@@ -112,11 +112,9 @@ Graph create_graph() {
     int   vertices = VERTICES;
     graph.vertices_count = vertices;
     graph.adj_lists = malloc(vertices * sizeof(Node *));
-    graph.visited = malloc(vertices * sizeof(int));
 
     for (int i = 0; i < vertices; i++) {
         graph.adj_lists[i] = NULL;
-        graph.visited[i] = 0;
     }
     return graph;
 }
@@ -209,17 +207,6 @@ void update_queue(PriorityQueue *queue, Node *node, int *distance) {
     }
 }
 
-void print_path(int parent[], int v) {
-    if (v == -1) {
-        return;
-    }
-    print_path(parent, parent[v]);
-    printf("%c ", v);
-}
-
-// TODO: INPUT GRAPH
-// a b 5 a c 2 b c 1 b d 4 b e 2 c e 7 d e 6 d f 3 e f 1
-// 1 2 5 1 3 2 2 3 1 2 4 4 2 5 2 3 5 7 4 5 6 4 6 3 5 6 1
 /** Dijkstra's Algorithm **/
 void dijkstra(Graph graph) {
     PriorityQueue queue;
@@ -230,6 +217,8 @@ void dijkstra(Graph graph) {
     int parent[graph.vertices_count];
     int visited[graph.vertices_count];
     int distance[graph.vertices_count];
+
+    // Place all vertices in the priority queue
     for (int i = 0; i < graph.vertices_count; i++) {
         distance[i] = (i == graph.source) ? 0 : INF;
         parent[i] = -1;
@@ -238,15 +227,16 @@ void dijkstra(Graph graph) {
         Node dest = {i, 0, NULL};
         insert_queue(&queue, dest, distance);
     }
+
+    // Make a path for each vertex
     for (int i = 0; i < graph.vertices_count; i++) {
-        // printf("Popping min node.\n");
         Node node = dequeue(&queue, distance);
         visited[node.vertex] = 1;
 
+        // Update neighbors to the current vertex
         Node *neighbor = graph.adj_lists[node.vertex];
-        // Update distance for every neighbor
         while (neighbor) {
-            // if current node distance + the edge is better than neighbor dist
+            // If current node distance + the edge is better than neighbor dist
             if (!visited[neighbor->vertex] &&
                 distance[node.vertex] + neighbor->weight <
                     distance[neighbor->vertex]) {
@@ -259,16 +249,25 @@ void dijkstra(Graph graph) {
             neighbor = neighbor->next;
         }
     }
+    printf("\nAll paths and distances:\n");
     for (int i = 0; i < graph.vertices_count; i++) {
-        // Print all paths for nodes with children
-        // if (i == graph.source || !graph.adj_lists[i]) {
-        //     continue;
-        // }
         if (i == graph.source || parent[i] == -1) {
             continue;
         }
-        print_path(parent, i);
+        print_path(parent, i, 0);
         printf(": %d", distance[i]);
         printf("\n");
+    }
+}
+
+/** Print the full path from the source node to node v **/
+void print_path(int parent[], int v, int arrow) {
+    if (v == -1) {
+        return;
+    }
+    print_path(parent, parent[v], 1);
+    printf("%c", v);
+    if (arrow) {
+        printf(" -> ");
     }
 }
